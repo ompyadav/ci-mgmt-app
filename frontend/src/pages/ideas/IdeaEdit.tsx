@@ -23,14 +23,13 @@ const IdeaEdit: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const categories = [
+    'Automation',
+    'Gen AI',
+    'Business Process Improvement',
+    'IT Process Improvement',
     'Process Improvement',
-    'Cost Reduction',
-    'Quality Enhancement',
-    'Safety Improvement',
-    'Technology Innovation',
-    'Customer Experience',
-    'Sustainability',
-    'Other',
+    'Reliability',
+    'Innovation',
   ];
 
   useEffect(() => {
@@ -211,17 +210,23 @@ const IdeaEdit: React.FC = () => {
             </div>
 
             <div>
-              <Input
-                label="Identified By"
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Identified by
+              </label>
+              <select
                 value={formData.identifiedBy || ''}
                 onChange={(e) => handleChange('identifiedBy', e.target.value)}
-                placeholder="Person who identified this opportunity"
-              />
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">Select...</option>
+                <option value="IBM">IBM</option>
+                <option value="Suncor">Suncor</option>
+              </select>
             </div>
 
             <div>
               <Input
-                label="Identified On"
+                label="Identified On Date"
                 type="date"
                 value={formData.identifiedOn || ''}
                 onChange={(e) => handleChange('identifiedOn', e.target.value)}
@@ -332,19 +337,19 @@ const IdeaEdit: React.FC = () => {
 
             <div>
               <Input
-                label="Supporting Pods"
+                label="Other Supporting PODs / Teams"
                 value={formData.supportingPods || ''}
                 onChange={(e) => handleChange('supportingPods', e.target.value)}
-                placeholder="Other pods involved"
+                placeholder="Other pods or teams involved"
               />
             </div>
 
             <div>
               <Input
-                label="ServiceNow Ticket"
+                label="ServiceNow Ticket #"
                 value={formData.serviceNowTicket || ''}
                 onChange={(e) => handleChange('serviceNowTicket', e.target.value)}
-                placeholder="Ticket number"
+                placeholder="ServiceNow ticket number"
               />
             </div>
           </div>
@@ -430,6 +435,36 @@ const IdeaEdit: React.FC = () => {
                 type="number"
                 value={formData.estimatedEffortsValue || ''}
                 onChange={(e) => handleChange('estimatedEffortsValue', parseFloat(e.target.value) || undefined)}
+                placeholder="0"
+                min="0"
+                step="0.01"
+              />
+            </div>
+          </div>
+        </Card>
+
+        {/* Actual Efforts Spent */}
+        <Card>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Actual Efforts Spent</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Input
+                label="Actual Efforts Spent (Hrs)"
+                type="number"
+                value={formData.actualEffortsSpentHours || ''}
+                onChange={(e) => handleChange('actualEffortsSpentHours', parseFloat(e.target.value) || undefined)}
+                placeholder="0"
+                min="0"
+                step="0.1"
+              />
+            </div>
+
+            <div>
+              <Input
+                label="Actual Efforts Spent ($ Value)"
+                type="number"
+                value={formData.actualEffortsSpentValue || ''}
+                onChange={(e) => handleChange('actualEffortsSpentValue', parseFloat(e.target.value) || undefined)}
                 placeholder="0"
                 min="0"
                 step="0.01"

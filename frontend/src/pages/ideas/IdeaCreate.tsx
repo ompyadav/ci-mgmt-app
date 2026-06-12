@@ -252,9 +252,55 @@ const IdeaCreate: React.FC = () => {
               </div>
             </div>
 
+            {/* Identification Details */}
+            <div className="border-t border-gray-200 pt-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Identification Details</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Identified by
+                  </label>
+                  <select
+                    name="identifiedBy"
+                    value={formData.identifiedBy || ''}
+                    onChange={handleChange}
+                    className="input w-full"
+                  >
+                    <option value="">Select...</option>
+                    <option value="IBM">IBM</option>
+                    <option value="Suncor">Suncor</option>
+                  </select>
+                </div>
+
+                <Input
+                  label="Identified On Date"
+                  name="identifiedOn"
+                  type="date"
+                  value={formData.identifiedOn || ''}
+                  onChange={handleChange}
+                />
+
+                <Input
+                  label="Name of Consultant"
+                  name="consultantName"
+                  value={formData.consultantName || ''}
+                  onChange={handleChange}
+                  placeholder="Enter consultant name"
+                />
+
+                <Input
+                  label="ServiceNow Ticket #"
+                  name="serviceNowTicket"
+                  value={formData.serviceNowTicket || ''}
+                  onChange={handleChange}
+                  placeholder="Enter ServiceNow ticket number"
+                />
+              </div>
+            </div>
+
             {/* Additional Details */}
             <div className="border-t border-gray-200 pt-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Additional Details</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Team & Application Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Input
                   label="Pod/Team"
@@ -262,6 +308,14 @@ const IdeaCreate: React.FC = () => {
                   value={formData.podTeam || ''}
                   onChange={handleChange}
                   placeholder="Enter your pod or team name"
+                />
+
+                <Input
+                  label="Other Supporting PODs / Teams"
+                  name="supportingPods"
+                  value={formData.supportingPods || ''}
+                  onChange={handleChange}
+                  placeholder="Enter supporting pods or teams"
                 />
 
                 <Input
@@ -286,6 +340,14 @@ const IdeaCreate: React.FC = () => {
                   value={formData.suncorManager || ''}
                   onChange={handleChange}
                   placeholder="Enter Suncor manager name"
+                />
+
+                <Input
+                  label="Suncor GM"
+                  name="suncorGm"
+                  value={formData.suncorGm || ''}
+                  onChange={handleChange}
+                  placeholder="Enter Suncor GM name"
                 />
               </div>
             </div>
@@ -373,6 +435,34 @@ const IdeaCreate: React.FC = () => {
                   onChange={handleNumberChange}
                   error={errors.estimatedEffortsValue}
                   placeholder="Enter estimated cost"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+            </div>
+
+            {/* Actual Efforts Spent */}
+            <div className="border-t border-gray-200 pt-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Actual Efforts Spent</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Input
+                  label="Actual Efforts Spent (Hrs)"
+                  name="actualEffortsSpentHours"
+                  type="number"
+                  value={formData.actualEffortsSpentHours || ''}
+                  onChange={handleNumberChange}
+                  placeholder="Enter actual hours spent"
+                  min="0"
+                  step="0.1"
+                />
+
+                <Input
+                  label="Actual Efforts Spent ($ Value)"
+                  name="actualEffortsSpentValue"
+                  type="number"
+                  value={formData.actualEffortsSpentValue || ''}
+                  onChange={handleNumberChange}
+                  placeholder="Enter actual dollar value"
                   min="0"
                   step="0.01"
                 />

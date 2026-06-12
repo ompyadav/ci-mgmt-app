@@ -3,7 +3,7 @@ import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { useAuthStore } from '../../store/authStore';
-import { Bell, User, Shield, Database, Save } from 'lucide-react';
+import { Bell, User, Shield, Database, Save, Key, Smartphone, Lock, AlertCircle } from 'lucide-react';
 
 const Settings: React.FC = () => {
   const { user } = useAuthStore();
@@ -140,27 +140,194 @@ const Settings: React.FC = () => {
 
       {/* Security Tab */}
       {activeTab === 'security' && (
-        <Card>
-          <div className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Security Settings</h2>
-            <div className="space-y-6 max-w-2xl">
-              <div>
-                <h3 className="font-medium text-gray-900 mb-3">Change Password</h3>
-                <div className="space-y-3">
-                  <Input label="Current Password" type="password" />
-                  <Input label="New Password" type="password" />
-                  <Input label="Confirm New Password" type="password" />
-                  <Button variant="primary">Update Password</Button>
-                </div>
+        <div className="space-y-6">
+          {/* Change Password */}
+          <Card>
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Lock className="w-6 h-6 text-blue-600" />
+                <h2 className="text-xl font-semibold text-gray-900">Change Password</h2>
               </div>
-              <div className="border-t pt-6">
-                <h3 className="font-medium text-gray-900 mb-3">Two-Factor Authentication</h3>
-                <p className="text-gray-600 mb-3">Add an extra layer of security to your account</p>
-                <Button variant="outline">Enable 2FA</Button>
+              <div className="space-y-3 max-w-2xl">
+                <Input label="Current Password" type="password" placeholder="Enter current password" />
+                <Input label="New Password" type="password" placeholder="Enter new password (min 8 characters)" />
+                <Input label="Confirm New Password" type="password" placeholder="Confirm new password" />
+                <Button variant="primary">
+                  <Save className="w-4 h-4 mr-2" />
+                  Update Password
+                </Button>
               </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+
+          {/* Two-Factor Authentication */}
+          <Card>
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Smartphone className="w-6 h-6 text-green-600" />
+                <h2 className="text-xl font-semibold text-gray-900">Two-Factor Authentication (2FA)</h2>
+              </div>
+              <div className="max-w-2xl">
+                <p className="text-gray-600 mb-4">
+                  Add an extra layer of security to your account by requiring a verification code from your authenticator app.
+                </p>
+                
+                {/* Current Status */}
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-3 h-3 rounded-full ${user?.mfaEnabled ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {user?.mfaEnabled ? '2FA Enabled' : '2FA Disabled'}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {user?.mfaEnabled
+                            ? 'Your account is protected with two-factor authentication'
+                            : 'Enable 2FA to secure your account'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Coming Soon Notice */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-blue-900 mb-1">Coming Soon</p>
+                      <p className="text-sm text-blue-800">
+                        Full 2FA implementation with Google Authenticator, Authy, or Microsoft Authenticator support is currently in development.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Feature Preview */}
+                <div className="space-y-3">
+                  <h3 className="font-medium text-gray-900">What you'll be able to do:</h3>
+                  <ul className="space-y-2 text-sm text-gray-600">
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-600 mt-0.5">✓</span>
+                      <span>Scan QR code with your authenticator app</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-600 mt-0.5">✓</span>
+                      <span>Enter 6-digit verification codes during login</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-600 mt-0.5">✓</span>
+                      <span>Generate backup codes for account recovery</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-600 mt-0.5">✓</span>
+                      <span>Manage trusted devices</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <Button variant="outline" disabled className="mt-4">
+                  <Smartphone className="w-4 h-4 mr-2" />
+                  Enable 2FA (Coming Soon)
+                </Button>
+              </div>
+            </div>
+          </Card>
+
+          {/* Passkey / WebAuthn */}
+          <Card>
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Key className="w-6 h-6 text-purple-600" />
+                <h2 className="text-xl font-semibold text-gray-900">Passkey (Biometric Authentication)</h2>
+              </div>
+              <div className="max-w-2xl">
+                <p className="text-gray-600 mb-4">
+                  Use your device's biometric authentication (fingerprint, face recognition) or security key to sign in without a password.
+                </p>
+
+                {/* Coming Soon Notice */}
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-purple-600 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-purple-900 mb-1">Coming Soon</p>
+                      <p className="text-sm text-purple-800">
+                        Passkey support using WebAuthn standard is currently in development. This will enable passwordless authentication using biometrics or security keys.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Feature Preview */}
+                <div className="space-y-3">
+                  <h3 className="font-medium text-gray-900">What you'll be able to do:</h3>
+                  <ul className="space-y-2 text-sm text-gray-600">
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-600 mt-0.5">✓</span>
+                      <span>Sign in with fingerprint or face recognition</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-600 mt-0.5">✓</span>
+                      <span>Use hardware security keys (YubiKey, etc.)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-600 mt-0.5">✓</span>
+                      <span>Register multiple passkeys for different devices</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-600 mt-0.5">✓</span>
+                      <span>Passwordless, phishing-resistant authentication</span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Supported Devices Info */}
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-4">
+                  <p className="text-sm font-medium text-gray-900 mb-2">Supported Devices:</p>
+                  <p className="text-sm text-gray-600">
+                    Windows Hello, Touch ID (Mac/iOS), Face ID (iOS), Android Biometrics, FIDO2 Security Keys
+                  </p>
+                </div>
+
+                <Button variant="outline" disabled className="mt-4">
+                  <Key className="w-4 h-4 mr-2" />
+                  Add Passkey (Coming Soon)
+                </Button>
+              </div>
+            </div>
+          </Card>
+
+          {/* Session Management */}
+          <Card>
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Shield className="w-6 h-6 text-orange-600" />
+                <h2 className="text-xl font-semibold text-gray-900">Active Sessions</h2>
+              </div>
+              <div className="max-w-2xl">
+                <p className="text-gray-600 mb-4">
+                  Manage your active sessions and sign out from other devices.
+                </p>
+                
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="font-medium text-gray-900">Current Session</p>
+                      <p className="text-sm text-gray-600">Windows • Chrome • {new Date().toLocaleDateString()}</p>
+                    </div>
+                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">Active</span>
+                  </div>
+                </div>
+
+                <Button variant="outline" className="mt-4" disabled>
+                  View All Sessions (Coming Soon)
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
       )}
 
       {/* System Tab */}

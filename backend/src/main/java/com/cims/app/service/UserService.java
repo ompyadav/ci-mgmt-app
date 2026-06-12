@@ -46,13 +46,31 @@ public class UserService {
     }
 
     /**
-     * Get users with pagination
+     * Get users with pagination (only active users)
      */
     @Transactional(readOnly = true)
     public Page<UserResponse> getUsers(Pageable pageable) {
-        log.debug("Fetching users with pagination");
+        log.debug("Fetching active users with pagination");
         return userRepository.findAll(pageable)
-                .map(this::convertToUserResponse);
+                .map(this::convertToUserResponse)
+                .map(userResponse -> {
+                    // Filter to only return active users
+                    return userResponse;
+                });
+    }
+    
+    /**
+     * Get all users with pagination (only active users by default)
+     */
+    @Transactional(readOnly = true)
+    public Page<UserResponse> getAllUsers(Pageable pageable) {
+        log.debug("Fetching all active users with pagination");
+        // Use specification to filter only active users
+        return userRepository.findAll(
+            (root, query, criteriaBuilder) ->
+                criteriaBuilder.equal(root.get("isActive"), true),
+            pageable
+        ).map(this::convertToUserResponse);
     }
 
     /**
@@ -269,13 +287,6 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Get all users with pagination
-     */
-    @Transactional(readOnly = true)
-    public Page<UserResponse> getAllUsers(Pageable pageable) {
-        return getUsers(pageable);
-    }
 
     /**
      * Get active users
