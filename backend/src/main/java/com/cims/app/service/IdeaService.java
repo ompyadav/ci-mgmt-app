@@ -37,6 +37,7 @@ public class IdeaService {
     private final CategoryRepository categoryRepository;
     private final AuditLogRepository auditLogRepository;
     private final NotificationService notificationService;
+    private final EmailService emailService;
 
     /**
      * Create a new idea
@@ -228,6 +229,9 @@ public class IdeaService {
 
         // Send notification to reviewers
         notificationService.notifyReviewers(updatedIdea);
+        
+        // Send email notifications to reviewers/managers
+        sendEmailToReviewers(updatedIdea);
 
         log.info("Idea submitted successfully: {}", id);
         return mapEntityToResponse(updatedIdea);
@@ -263,6 +267,10 @@ public class IdeaService {
 
         // Send notification to idea owner
         notificationService.notifyIdeaOwner(updatedIdea, "Your idea has been approved");
+        
+        // Send email notification to idea owner
+        String approverName = currentUser.getFirstName() + " " + currentUser.getLastName();
+        emailService.sendIdeaApprovedEmail(updatedIdea, approverName, comments);
 
         log.info("Idea approved successfully: {}", id);
         return mapEntityToResponse(updatedIdea);
@@ -299,6 +307,10 @@ public class IdeaService {
 
         // Send notification to idea owner
         notificationService.notifyIdeaOwner(updatedIdea, "Your idea has been rejected");
+        
+        // Send email notification to idea owner
+        String reviewerName = currentUser.getFirstName() + " " + currentUser.getLastName();
+        emailService.sendIdeaRejectedEmail(updatedIdea, reviewerName, reason);
 
         log.info("Idea rejected successfully: {}", id);
         return mapEntityToResponse(updatedIdea);
@@ -342,6 +354,10 @@ public class IdeaService {
 
         // Send notification to idea owner
         notificationService.notifyIdeaOwner(updatedIdea, "Your idea has been marked as implemented");
+        
+        // Send email notification to idea owner
+        String implementedBy = currentUser.getFirstName() + " " + currentUser.getLastName();
+        emailService.sendIdeaImplementedEmail(updatedIdea, implementedBy);
 
         log.info("Idea marked as implemented successfully: {}", id);
         return mapEntityToResponse(updatedIdea);
@@ -636,6 +652,26 @@ public class IdeaService {
                 .createdAt(idea.getCreatedAt())
                 .updatedAt(idea.getUpdatedAt())
                 .build();
+    }
+    
+    /**
+     * Send email notifications to reviewers when idea is submitted
+     */
+    private void sendEmailToReviewers(Idea idea) {
+        // Get all users with reviewer/manager/admin roles
+        List<User> reviewers = userRepository.findAll().stream()
+                .filter(user -> user.getRoles().stream()
+                        .anyMatch(role -> role.getName().equals("ROLE_ADMIN") ||
+                                         role.getName().equals("ROLE_MANAGER") ||
+                                         role.getName().equals("ROLE_REVIEWER")))
+                .collect(Collectors.toList());
+        
+        // Send email to each reviewer
+        for (User reviewer : reviewers) {
+            emailService.sendApprovalRequiredEmail(idea, reviewer);
+        }
+        
+        log.info("Sent approval required emails to {} reviewers", reviewers.size());
     }
 
     // Inner class for statistics

@@ -31,6 +31,7 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final EmailService emailService;
 
     /**
      * Create a notification for a specific user
@@ -215,6 +216,9 @@ public class NotificationService {
                     comment.length() > 100 ? comment.substring(0, 100) + "..." : comment);
 
             createNotification(idea.getIdeaOwner(), title, message, NotificationType.COMMENT_ADDED);
+            
+            // Send email notification
+            emailService.sendCommentAddedEmail(idea, commenter, comment, idea.getIdeaOwner());
         }
     }
 
