@@ -114,7 +114,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, isSidebarOpen }) =>
             </div>
             <div className="hidden sm:block">
               <h1 className="text-lg font-semibold text-gray-900">CIMS</h1>
-              <p className="text-xs text-gray-500">Continuous Improvement</p>
+              <p className="text-xs text-gray-500">Continuous Improvement Management System</p>
             </div>
           </div>
         </div>

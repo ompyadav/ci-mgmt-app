@@ -126,7 +126,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-900">CIMS</h1>
-              <p className="text-xs text-gray-500">Continuous Improvement</p>
+              <p className="text-xs text-gray-500">Continuous Improvement Management System</p>
             </div>
           </div>
         </div>
