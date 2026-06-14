@@ -7,7 +7,10 @@ import { Table } from '../../components/common/Table';
 import { Badge } from '../../components/common/Badge';
 import { ideaService } from '../../api/services/ideaService';
 import { dashboardService } from '../../api/services/dashboardService';
-import { Idea, IdeaStatus } from '@/types';
+import { IdeaStatus } from '@/types';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 type ReportType = 'ideas' | 'roi' | 'performance' | 'users';
 type ExportFormat = 'csv' | 'excel' | 'pdf';
@@ -17,7 +20,7 @@ const Reports: React.FC = () => {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [status, setStatus] = useState<IdeaStatus | 'ALL'>('ALL');
-  const [category, setCategory] = useState('ALL');
+  const [category] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
 
   // Fetch data
@@ -135,11 +138,171 @@ const Reports: React.FC = () => {
   };
 
   const exportToExcel = () => {
-    alert('Excel export functionality will be implemented with a library like xlsx or exceljs');
+    if (!filteredIdeas.length) return;
+
+    // Prepare data for Excel
+    const excelData = filteredIdeas.map(idea => ({
+      'Idea Number': idea.ideaNumber || '',
+      'Category': idea.category || '',
+      'Identified by (IBM / Suncor)': idea.identifiedBy || '',
+      'Identified On Date': idea.identifiedOn ? new Date(idea.identifiedOn).toLocaleDateString() : '',
+      'POD / Team': idea.podTeam || '',
+      'IBM Delivery Manager': idea.ibmDeliveryManager || '',
+      'Suncor Manager': idea.suncorManager || '',
+      'Suncor GM': idea.suncorGm || '',
+      'Application Name': idea.applicationName || '',
+      'Name of Consultant': idea.consultantName || '',
+      'Idea Title': idea.title || '',
+      'Problem Statement / Opportunity': idea.problemStatement || '',
+      'Proposed Solution': idea.proposedSolution || '',
+      'Actual Solution Implemented': idea.actualSolutionImplemented || '',
+      'Other Supporting PODs / Teams': idea.supportingPods || '',
+      'ServiceNow Ticket #': idea.serviceNowTicket || '',
+      'Expected Quantitative Benefits (Hours)': idea.expectedQuantitativeBenefitsHours || 0,
+      'Expected Quantitative Benefits ($ Value)': idea.expectedQuantitativeBenefitsValue || 0,
+      'Expected Qualitative': idea.expectedQualitativeBenefits || '',
+      'Benefit Type (One time / Recurring)': idea.benefitType || '',
+      'Estimated Efforts (Hours)': idea.estimatedEffortsHours || 0,
+      'Estimated Efforts ($ Value)': idea.estimatedEffortsValue || 0,
+      'Actual Efforts Spent (Hrs)': idea.actualEffortsSpentHours || 0,
+      'Actual Efforts Spent ($ Value)': idea.actualEffortsSpentValue || 0,
+      'Date of Implementation': idea.implementationDate ? new Date(idea.implementationDate).toLocaleDateString() : '',
+      'Status': idea.status || '',
+      'Sub Status': idea.subStatus || '',
+      'Reason for Rejection': idea.reasonForRejection || '',
+      'Suncor Goals': idea.suncorGoals || '',
+      'Remarks': idea.remarks || ''
+    }));
+
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(excelData);
+
+    // Set column widths
+    const colWidths = [
+      { wch: 15 }, // Idea Number
+      { wch: 20 }, // Category
+      { wch: 25 }, // Identified by
+      { wch: 18 }, // Identified On Date
+      { wch: 20 }, // POD / Team
+      { wch: 25 }, // IBM Delivery Manager
+      { wch: 25 }, // Suncor Manager
+      { wch: 25 }, // Suncor GM
+      { wch: 25 }, // Application Name
+      { wch: 25 }, // Name of Consultant
+      { wch: 40 }, // Idea Title
+      { wch: 50 }, // Problem Statement
+      { wch: 50 }, // Proposed Solution
+      { wch: 50 }, // Actual Solution
+      { wch: 30 }, // Supporting PODs
+      { wch: 20 }, // ServiceNow Ticket
+      { wch: 20 }, // Expected Hours
+      { wch: 20 }, // Expected Value
+      { wch: 30 }, // Expected Qualitative
+      { wch: 25 }, // Benefit Type
+      { wch: 20 }, // Estimated Hours
+      { wch: 20 }, // Estimated Value
+      { wch: 20 }, // Actual Hours
+      { wch: 20 }, // Actual Value
+      { wch: 20 }, // Implementation Date
+      { wch: 15 }, // Status
+      { wch: 20 }, // Sub Status
+      { wch: 30 }, // Reason for Rejection
+      { wch: 30 }, // Suncor Goals
+      { wch: 40 }  // Remarks
+    ];
+    ws['!cols'] = colWidths;
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Ideas Report');
+
+    // Generate file name with timestamp
+    const fileName = `ideas-report-${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    // Save file
+    XLSX.writeFile(wb, fileName);
   };
 
   const exportToPDF = () => {
-    alert('PDF export functionality will be implemented with a library like jsPDF');
+    if (!filteredIdeas.length) return;
+
+    // Create new PDF document
+    const doc = new jsPDF('landscape', 'mm', 'a4');
+    
+    // Add title
+    doc.setFontSize(18);
+    doc.text('Ideas Report', 14, 15);
+    
+    // Add generation date
+    doc.setFontSize(10);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 22);
+    
+    // Add summary statistics
+    doc.setFontSize(12);
+    doc.text('Summary Statistics', 14, 30);
+    doc.setFontSize(10);
+    doc.text(`Total Ideas: ${summary.totalIdeas}`, 14, 36);
+    doc.text(`Approved: ${summary.approvedCount}`, 60, 36);
+    doc.text(`Rejected: ${summary.rejectedCount}`, 100, 36);
+    doc.text(`Pending: ${summary.pendingCount}`, 140, 36);
+    doc.text(`Total ROI: $${summary.totalROI.toLocaleString()}`, 180, 36);
+
+    // Prepare table data
+    const tableData = filteredIdeas.map(idea => [
+      idea.ideaNumber || '',
+      idea.title || '',
+      idea.category || '',
+      idea.status || '',
+      idea.ideaOwnerName || '',
+      `$${(idea.roi || 0).toLocaleString()}`,
+      new Date(idea.createdAt).toLocaleDateString()
+    ]);
+
+    // Add table
+    autoTable(doc, {
+      startY: 42,
+      head: [['Idea #', 'Title', 'Category', 'Status', 'Owner', 'ROI', 'Created']],
+      body: tableData,
+      theme: 'grid',
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+      },
+      headStyles: {
+        fillColor: [59, 130, 246], // Blue color
+        textColor: 255,
+        fontStyle: 'bold',
+      },
+      alternateRowStyles: {
+        fillColor: [245, 247, 250],
+      },
+      columnStyles: {
+        0: { cellWidth: 25 }, // Idea #
+        1: { cellWidth: 60 }, // Title
+        2: { cellWidth: 30 }, // Category
+        3: { cellWidth: 25 }, // Status
+        4: { cellWidth: 35 }, // Owner
+        5: { cellWidth: 30 }, // ROI
+        6: { cellWidth: 25 }, // Created
+      },
+    });
+
+    // Add footer with page numbers
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.text(
+        `Page ${i} of ${pageCount}`,
+        doc.internal.pageSize.getWidth() / 2,
+        doc.internal.pageSize.getHeight() - 10,
+        { align: 'center' }
+      );
+    }
+
+    // Save PDF
+    const fileName = `ideas-report-${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(fileName);
   };
 
   const handleExport = (format: ExportFormat) => {
@@ -363,24 +526,197 @@ const Reports: React.FC = () => {
     </Card>
   );
 
-  const renderUsersReport = () => (
-    <Card>
-      <div className="p-6">
-        <h3 className="text-lg font-semibold mb-4">User Activity Report</h3>
-        <div className="space-y-4">
-          <p className="text-gray-600">
-            User activity reports show idea submission patterns, top contributors, and engagement metrics.
-          </p>
-          <div className="p-4 bg-blue-50 rounded-lg">
-            <p className="text-sm text-blue-800">
-              💡 This report will show detailed user statistics including top idea contributors, 
-              submission trends by user, and department-wise analytics.
-            </p>
-          </div>
+  const renderUsersReport = () => {
+    // Calculate user-specific metrics from ideas
+    const userContributions = filteredIdeas.reduce((acc: any, idea: any) => {
+      const owner = idea.ideaOwnerName || 'Unknown';
+      if (!acc[owner]) {
+        acc[owner] = {
+          name: owner,
+          totalIdeas: 0,
+          approvedIdeas: 0,
+          rejectedIdeas: 0,
+          pendingIdeas: 0,
+          totalROI: 0,
+        };
+      }
+      acc[owner].totalIdeas++;
+      if (idea.status === 'APPROVED') acc[owner].approvedIdeas++;
+      if (idea.status === 'REJECTED') acc[owner].rejectedIdeas++;
+      if (idea.status === 'SUBMITTED' || idea.status === 'UNDER_REVIEW') acc[owner].pendingIdeas++;
+      acc[owner].totalROI += idea.roi || 0;
+      return acc;
+    }, {});
+
+    const topContributors = Object.values(userContributions)
+      .sort((a: any, b: any) => b.totalIdeas - a.totalIdeas)
+      .slice(0, 10);
+
+    // Calculate submission patterns by month
+    const submissionsByMonth = filteredIdeas.reduce((acc: any, idea: any) => {
+      const month = new Date(idea.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+      acc[month] = (acc[month] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Engagement metrics
+    const engagementMetrics = {
+      totalUsers: Object.keys(userContributions).length,
+      avgIdeasPerUser: filteredIdeas.length / Math.max(Object.keys(userContributions).length, 1),
+      mostActiveUser: topContributors[0]?.name || 'N/A',
+      highestROIContributor: Object.values(userContributions)
+        .sort((a: any, b: any) => b.totalROI - a.totalROI)[0] as any,
+    };
+
+    return (
+      <div className="space-y-6">
+        {/* Engagement Metrics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <div className="p-4">
+              <p className="text-sm text-gray-600">Active Contributors</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">
+                {engagementMetrics.totalUsers}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">Users with submissions</p>
+            </div>
+          </Card>
+          <Card>
+            <div className="p-4">
+              <p className="text-sm text-gray-600">Avg Ideas per User</p>
+              <p className="text-2xl font-bold text-blue-600 mt-1">
+                {engagementMetrics.avgIdeasPerUser.toFixed(1)}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">Average contribution</p>
+            </div>
+          </Card>
+          <Card>
+            <div className="p-4">
+              <p className="text-sm text-gray-600">Most Active User</p>
+              <p className="text-lg font-bold text-purple-600 mt-1 truncate">
+                {engagementMetrics.mostActiveUser}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                {topContributors[0]?.totalIdeas || 0} ideas submitted
+              </p>
+            </div>
+          </Card>
+          <Card>
+            <div className="p-4">
+              <p className="text-sm text-gray-600">Highest ROI Contributor</p>
+              <p className="text-lg font-bold text-green-600 mt-1 truncate">
+                {engagementMetrics.highestROIContributor?.name || 'N/A'}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                ${(engagementMetrics.highestROIContributor?.totalROI || 0).toLocaleString()} ROI
+              </p>
+            </div>
+          </Card>
         </div>
+
+        {/* Top Contributors Table */}
+        <Card>
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Top 10 Contributors</h3>
+              <Badge variant="info">{topContributors.length} users</Badge>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rank</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contributor</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Ideas</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Approved</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rejected</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pending</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total ROI</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Success Rate</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {topContributors.map((contributor: any, index: number) => (
+                    <tr key={contributor.name} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                            index === 0 ? 'bg-yellow-100 text-yellow-800' :
+                            index === 1 ? 'bg-gray-100 text-gray-800' :
+                            index === 2 ? 'bg-orange-100 text-orange-800' :
+                            'bg-blue-50 text-blue-800'
+                          }`}>
+                            #{index + 1}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{contributor.name}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-semibold text-gray-900">{contributor.totalIdeas}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Badge variant="success">{contributor.approvedIdeas}</Badge>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Badge variant="danger">{contributor.rejectedIdeas}</Badge>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Badge variant="warning">{contributor.pendingIdeas}</Badge>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-semibold text-green-600">
+                          ${contributor.totalROI.toLocaleString()}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {contributor.totalIdeas > 0
+                            ? ((contributor.approvedIdeas / contributor.totalIdeas) * 100).toFixed(1)
+                            : 0}%
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </Card>
+
+        {/* Submission Patterns */}
+        <Card>
+          <div className="p-6">
+            <h3 className="text-lg font-semibold mb-4">Idea Submission Patterns</h3>
+            <div className="space-y-3">
+              {Object.entries(submissionsByMonth)
+                .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
+                .slice(-12)
+                .map(([month, count]: [string, any]) => (
+                  <div key={month} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm font-medium text-gray-700">{month}</span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-48 bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full"
+                          style={{
+                            width: `${(count / Math.max(...Object.values(submissionsByMonth) as number[])) * 100}%`
+                          }}
+                        />
+                      </div>
+                      <span className="text-sm font-semibold text-gray-900 w-12 text-right">
+                        {count} ideas
+                      </span>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </Card>
       </div>
-    </Card>
-  );
+    );
+  };
 
   return (
     <div className="space-y-6">

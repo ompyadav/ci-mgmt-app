@@ -74,6 +74,46 @@ public class UserService {
     }
 
     /**
+     * Get all users with filters (search, status, department)
+     */
+    @Transactional(readOnly = true)
+    public Page<UserResponse> getAllUsersWithFilters(String search, String status, String department, Pageable pageable) {
+        log.debug("Fetching users with filters: search={}, status={}, department={}", search, status, department);
+        
+        return userRepository.findAll((root, query, criteriaBuilder) -> {
+            var predicates = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
+            
+            // Search filter (name, email, employeeId)
+            if (search != null && !search.trim().isEmpty()) {
+                String searchPattern = "%" + search.toLowerCase() + "%";
+                predicates.add(criteriaBuilder.or(
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("firstName")), searchPattern),
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("lastName")), searchPattern),
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("email")), searchPattern),
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("employeeId")), searchPattern)
+                ));
+            }
+            
+            // Status filter
+            if (status != null && !status.trim().isEmpty() && !"ALL".equalsIgnoreCase(status)) {
+                try {
+                    User.UserStatus userStatus = User.UserStatus.valueOf(status.toUpperCase());
+                    predicates.add(criteriaBuilder.equal(root.get("status"), userStatus));
+                } catch (IllegalArgumentException e) {
+                    log.warn("Invalid status filter: {}", status);
+                }
+            }
+            
+            // Department filter
+            if (department != null && !department.trim().isEmpty() && !"ALL".equalsIgnoreCase(department)) {
+                predicates.add(criteriaBuilder.equal(root.get("department"), department));
+            }
+            
+            return criteriaBuilder.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        }, pageable).map(this::convertToUserResponse);
+    }
+
+    /**
      * Get user by ID
      */
     @Transactional(readOnly = true)
@@ -185,6 +225,17 @@ public class UserService {
 
         if (request.getMfaEnabled() != null) {
             user.setMfaEnabled(request.getMfaEnabled());
+        }
+
+        // Update roles if provided
+        if (request.getRoleNames() != null && !request.getRoleNames().isEmpty()) {
+            Set<Role> roles = new HashSet<>();
+            for (String roleName : request.getRoleNames()) {
+                Role role = roleRepository.findByName(roleName)
+                        .orElseThrow(() -> new ResourceNotFoundException("Role", "name", roleName));
+                roles.add(role);
+            }
+            user.setRoles(roles);
         }
 
         User updatedUser = userRepository.save(user);

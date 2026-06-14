@@ -1,10 +1,18 @@
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card } from '../../components/common/Card';
 import { BarChart3, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { dashboardService } from '../../api/services/dashboardService';
 
 const ReportsAnalytics: React.FC = () => {
   const navigate = useNavigate();
+
+  // Fetch KPIs for Quick Overview
+  const { data: kpis, isLoading } = useQuery({
+    queryKey: ['kpis'],
+    queryFn: dashboardService.getKPIs,
+  });
 
   const sections = [
     {
@@ -62,24 +70,36 @@ const ReportsAnalytics: React.FC = () => {
       <Card>
         <div className="p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Overview</h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <p className="text-sm text-blue-600 font-medium">Total Ideas</p>
-              <p className="text-2xl font-bold text-blue-900 mt-1">-</p>
+          {isLoading ? (
+            <div className="text-center py-8 text-gray-500">Loading statistics...</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <p className="text-sm text-blue-600 font-medium">Total Ideas</p>
+                <p className="text-2xl font-bold text-blue-900 mt-1">
+                  {kpis?.totalIdeasSubmitted?.toLocaleString() || 0}
+                </p>
+              </div>
+              <div className="bg-green-50 p-4 rounded-lg">
+                <p className="text-sm text-green-600 font-medium">Implemented</p>
+                <p className="text-2xl font-bold text-green-900 mt-1">
+                  {kpis?.ideasImplemented?.toLocaleString() || 0}
+                </p>
+              </div>
+              <div className="bg-yellow-50 p-4 rounded-lg">
+                <p className="text-sm text-yellow-600 font-medium">Approved</p>
+                <p className="text-2xl font-bold text-yellow-900 mt-1">
+                  {kpis?.ideasApproved?.toLocaleString() || 0}
+                </p>
+              </div>
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <p className="text-sm text-purple-600 font-medium">Total ROI</p>
+                <p className="text-2xl font-bold text-purple-900 mt-1">
+                  ${kpis?.totalROI?.toLocaleString() || 0}
+                </p>
+              </div>
             </div>
-            <div className="bg-green-50 p-4 rounded-lg">
-              <p className="text-sm text-green-600 font-medium">Implemented</p>
-              <p className="text-2xl font-bold text-green-900 mt-1">-</p>
-            </div>
-            <div className="bg-yellow-50 p-4 rounded-lg">
-              <p className="text-sm text-yellow-600 font-medium">In Progress</p>
-              <p className="text-2xl font-bold text-yellow-900 mt-1">-</p>
-            </div>
-            <div className="bg-purple-50 p-4 rounded-lg">
-              <p className="text-sm text-purple-600 font-medium">Total Savings</p>
-              <p className="text-2xl font-bold text-purple-900 mt-1">$-</p>
-            </div>
-          </div>
+          )}
         </div>
       </Card>
     </div>

@@ -24,7 +24,7 @@ const UserEdit: React.FC = () => {
     businessUnit: '',
     location: '',
     phoneNumber: '',
-    roles: [],
+    roleNames: [],
   });
 
   const departments = [
@@ -82,7 +82,7 @@ const UserEdit: React.FC = () => {
         businessUnit: user.businessUnit || '',
         location: user.location || '',
         phoneNumber: user.phoneNumber || '',
-        roles: user.roles,
+        roleNames: user.roles,
       });
     } catch (error) {
       console.error('Error fetching user:', error);
@@ -107,9 +107,9 @@ const UserEdit: React.FC = () => {
     const { value, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
-      roles: checked
-        ? [...prev.roles, value]
-        : prev.roles.filter((role) => role !== value),
+      roleNames: checked
+        ? [...prev.roleNames, value]
+        : prev.roleNames.filter((role) => role !== value),
     }));
   };
 
@@ -151,7 +151,7 @@ const UserEdit: React.FC = () => {
       newErrors.phoneNumber = 'Invalid phone number format';
     }
 
-    if (formData.roles.length === 0) {
+    if (formData.roleNames.length === 0) {
       newErrors.roles = 'At least one role must be selected';
     }
 
@@ -379,7 +379,7 @@ const UserEdit: React.FC = () => {
                     <input
                       type="checkbox"
                       value={role.value}
-                      checked={formData.roles.includes(role.value)}
+                      checked={formData.roleNames.includes(role.value)}
                       onChange={handleRoleChange}
                       className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                     />

@@ -1,208 +1,277 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card } from '../../components/common/Card';
-import { Bell, AlertCircle, Mail, MessageSquare, CheckCircle, Clock } from 'lucide-react';
+import { Button } from '../../components/common/Button';
+import { Badge } from '../../components/common/Badge';
+import { notificationService } from '../../api/services/notificationService';
+import { Notification } from '../../types';
+import {
+  Bell,
+  AlertCircle,
+  Mail,
+  MessageSquare,
+  CheckCircle,
+  Clock,
+  Trash2,
+  CheckCheck,
+  Loader2,
+  XCircle
+} from 'lucide-react';
 
 const Notifications: React.FC = () => {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    fetchNotifications();
+    fetchUnreadCount();
+  }, [filter]);
+
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = filter === 'unread'
+        ? await notificationService.getUnreadNotifications()
+        : await notificationService.getMyNotifications();
+      setNotifications(response.content);
+    } catch (err: any) {
+      console.error('Error fetching notifications:', err);
+      setError(err.message || 'Failed to load notifications');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUnreadCount = async () => {
+    try {
+      const count = await notificationService.getUnreadCount();
+      setUnreadCount(count);
+    } catch (err) {
+      console.error('Error fetching unread count:', err);
+    }
+  };
+
+  const handleMarkAsRead = async (id: number) => {
+    try {
+      await notificationService.markAsRead(id);
+      await fetchNotifications();
+      await fetchUnreadCount();
+    } catch (err: any) {
+      console.error('Error marking notification as read:', err);
+      alert(err.message || 'Failed to mark notification as read');
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await notificationService.markAllAsRead();
+      await fetchNotifications();
+      await fetchUnreadCount();
+    } catch (err: any) {
+      console.error('Error marking all as read:', err);
+      alert(err.message || 'Failed to mark all notifications as read');
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this notification?')) {
+      return;
+    }
+    try {
+      await notificationService.deleteNotification(id);
+      await fetchNotifications();
+      await fetchUnreadCount();
+    } catch (err: any) {
+      console.error('Error deleting notification:', err);
+      alert(err.message || 'Failed to delete notification');
+    }
+  };
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'IDEA_APPROVED':
+        return <CheckCircle className="w-5 h-5 text-green-600" />;
+      case 'IDEA_REJECTED':
+        return <XCircle className="w-5 h-5 text-red-600" />;
+      case 'IDEA_SUBMITTED':
+        return <Bell className="w-5 h-5 text-blue-600" />;
+      case 'IDEA_STATUS_CHANGED':
+        return <Clock className="w-5 h-5 text-purple-600" />;
+      case 'COMMENT_ADDED':
+        return <MessageSquare className="w-5 h-5 text-blue-600" />;
+      case 'SYSTEM':
+        return <Mail className="w-5 h-5 text-orange-600" />;
+      default:
+        return <Bell className="w-5 h-5 text-gray-600" />;
+    }
+  };
+
+  const getNotificationColor = (type: string) => {
+    switch (type) {
+      case 'IDEA_APPROVED':
+        return 'bg-green-100';
+      case 'IDEA_REJECTED':
+        return 'bg-red-100';
+      case 'IDEA_SUBMITTED':
+        return 'bg-blue-100';
+      case 'IDEA_STATUS_CHANGED':
+        return 'bg-purple-100';
+      case 'COMMENT_ADDED':
+        return 'bg-blue-100';
+      case 'SYSTEM':
+        return 'bg-orange-100';
+      default:
+        return 'bg-gray-100';
+    }
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (seconds < 60) return 'Just now';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
+    if (seconds < 604800) return `${Math.floor(seconds / 86400)} days ago`;
+    return date.toLocaleDateString();
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-primary-600 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Loading notifications...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Card className="max-w-md">
+          <div className="text-center">
+            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Notifications</h3>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <Button onClick={fetchNotifications}>Try Again</Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
-          <p className="text-gray-600 mt-2">Stay updated with your activities and system alerts</p>
-        </div>
-      </div>
-
-      {/* Coming Soon Banner */}
-      <Card>
-        <div className="p-8 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-            <Bell className="w-8 h-8 text-blue-600" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Notifications Center</h2>
-          <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-            Real-time notifications system is currently in development. You'll be able to receive instant updates about your ideas, approvals, comments, and system alerts.
+          <p className="text-gray-600 mt-2">
+            {unreadCount > 0 ? `You have ${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : 'All caught up!'}
           </p>
-          
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 max-w-2xl mx-auto">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div className="text-left">
-                <p className="font-medium text-blue-900 mb-1">Coming Soon</p>
-                <p className="text-sm text-blue-800">
-                  Full notification system with real-time updates, email notifications, and in-app alerts is being developed.
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
-      </Card>
-
-      {/* Feature Preview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Notification Types */}
-        <Card>
-          <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Notification Types</h3>
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">Idea Status Updates</p>
-                  <p className="text-sm text-gray-600">Get notified when your ideas are approved, rejected, or require more information</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <MessageSquare className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">Comments & Mentions</p>
-                  <p className="text-sm text-gray-600">Receive alerts when someone comments on your ideas or mentions you</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <Clock className="w-5 h-5 text-purple-600" />
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">Approval Requests</p>
-                  <p className="text-sm text-gray-600">Get notified when ideas are pending your review or approval</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <Mail className="w-5 h-5 text-orange-600" />
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">System Alerts</p>
-                  <p className="text-sm text-gray-600">Important system updates, maintenance notices, and announcements</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* Features */}
-        <Card>
-          <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Planned Features</h3>
-            <div className="space-y-3">
-              <div className="flex items-start gap-2">
-                <span className="text-blue-600 mt-0.5">✓</span>
-                <div>
-                  <p className="font-medium text-gray-900">Real-time Notifications</p>
-                  <p className="text-sm text-gray-600">Instant in-app notifications without page refresh</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2">
-                <span className="text-blue-600 mt-0.5">✓</span>
-                <div>
-                  <p className="font-medium text-gray-900">Email Notifications</p>
-                  <p className="text-sm text-gray-600">Receive important updates via email</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2">
-                <span className="text-blue-600 mt-0.5">✓</span>
-                <div>
-                  <p className="font-medium text-gray-900">Notification Preferences</p>
-                  <p className="text-sm text-gray-600">Customize which notifications you want to receive</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2">
-                <span className="text-blue-600 mt-0.5">✓</span>
-                <div>
-                  <p className="font-medium text-gray-900">Mark as Read/Unread</p>
-                  <p className="text-sm text-gray-600">Manage your notification status</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2">
-                <span className="text-blue-600 mt-0.5">✓</span>
-                <div>
-                  <p className="font-medium text-gray-900">Notification History</p>
-                  <p className="text-sm text-gray-600">View all past notifications with filtering</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2">
-                <span className="text-blue-600 mt-0.5">✓</span>
-                <div>
-                  <p className="font-medium text-gray-900">Push Notifications</p>
-                  <p className="text-sm text-gray-600">Browser push notifications for critical updates</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
+        <div className="flex gap-3">
+          {unreadCount > 0 && (
+            <Button variant="outline" onClick={handleMarkAllAsRead}>
+              <CheckCheck className="w-4 h-4 mr-2" />
+              Mark All as Read
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Sample Preview */}
+      {/* Filter Tabs */}
+      <div className="flex gap-2 border-b border-gray-200">
+        <button
+          onClick={() => setFilter('all')}
+          className={`px-4 py-2 font-medium transition-colors ${
+            filter === 'all'
+              ? 'text-primary-600 border-b-2 border-primary-600'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          All Notifications
+        </button>
+        <button
+          onClick={() => setFilter('unread')}
+          className={`px-4 py-2 font-medium transition-colors ${
+            filter === 'unread'
+              ? 'text-primary-600 border-b-2 border-primary-600'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          Unread {unreadCount > 0 && `(${unreadCount})`}
+        </button>
+      </div>
+
+      {/* Notifications List */}
       <Card>
-        <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Preview: How Notifications Will Look</h3>
-          <div className="space-y-3">
-            {/* Sample Notification 1 */}
-            <div className="p-4 rounded-lg border bg-blue-50 border-blue-200">
-              <div className="flex items-start gap-4">
-                <div className="p-2 rounded-lg bg-green-100">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h4 className="font-semibold text-gray-900">Idea Approved</h4>
-                      <p className="text-sm text-gray-600 mt-1">
-                        Your idea "Automation for Report Generation" has been approved by the review team
-                      </p>
-                      <p className="text-xs text-gray-500 mt-2">2 hours ago</p>
+        {notifications.length === 0 ? (
+          <div className="p-12 text-center">
+            <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Notifications</h3>
+            <p className="text-gray-600">
+              {filter === 'unread'
+                ? "You don't have any unread notifications"
+                : "You don't have any notifications yet"}
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-200">
+            {notifications.map((notification) => (
+              <div
+                key={notification.id}
+                className={`p-4 hover:bg-gray-50 transition-colors ${
+                  !notification.isRead ? 'bg-blue-50' : ''
+                }`}
+              >
+                <div className="flex items-start gap-4">
+                  <div className={`p-2 rounded-lg ${getNotificationColor(notification.notificationType)}`}>
+                    {getNotificationIcon(notification.notificationType)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-semibold text-gray-900">{notification.title}</h4>
+                          {!notification.isRead && (
+                            <Badge variant="info" className="text-xs">New</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 mb-2">{notification.message}</p>
+                        <p className="text-xs text-gray-500">{formatTimeAgo(notification.createdAt)}</p>
+                      </div>
+                      <div className="flex gap-2 flex-shrink-0">
+                        {!notification.isRead && (
+                          <button
+                            onClick={() => handleMarkAsRead(notification.id)}
+                            className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                            title="Mark as read"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDelete(notification.id)}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                    <span className="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded">New</span>
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* Sample Notification 2 */}
-            <div className="p-4 rounded-lg border bg-white border-gray-200 opacity-75">
-              <div className="flex items-start gap-4">
-                <div className="p-2 rounded-lg bg-blue-100">
-                  <MessageSquare className="w-5 h-5 text-blue-600" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900">New Comment</h4>
-                  <p className="text-sm text-gray-600 mt-1">
-                    John Doe commented on your idea "Process Improvement Initiative"
-                  </p>
-                  <p className="text-xs text-gray-500 mt-2">1 day ago</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Sample Notification 3 */}
-            <div className="p-4 rounded-lg border bg-white border-gray-200 opacity-75">
-              <div className="flex items-start gap-4">
-                <div className="p-2 rounded-lg bg-purple-100">
-                  <Clock className="w-5 h-5 text-purple-600" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900">Approval Required</h4>
-                  <p className="text-sm text-gray-600 mt-1">
-                    3 new ideas are pending your review and approval
-                  </p>
-                  <p className="text-xs text-gray-500 mt-2">3 days ago</p>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
-        </div>
+        )}
       </Card>
     </div>
   );

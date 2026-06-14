@@ -169,8 +169,14 @@ const IdeaDetail: React.FC = () => {
   };
 
   const canEdit = idea && user && (
-    idea.ideaOwnerName === `${user.firstName} ${user.lastName}` &&
-    (idea.status === 'DRAFT' || idea.status === 'MORE_INFO_REQUIRED')
+    (
+      idea.ideaOwnerName === `${user.firstName} ${user.lastName}` &&
+      (idea.status === 'DRAFT' || idea.status === 'MORE_INFO_REQUIRED' || idea.status === 'APPROVED')
+    ) ||
+    (
+      idea.status === 'APPROVED' &&
+      (user.roles.includes('ROLE_MANAGER') || user.roles.includes('ROLE_ADMIN'))
+    )
   );
 
   const canSubmit = idea && user && (
@@ -195,7 +201,11 @@ const IdeaDetail: React.FC = () => {
 
   const canRevertToDraft = idea && user && (
     idea.status === 'REJECTED' &&
-    idea.ideaOwnerName === `${user.firstName} ${user.lastName}`
+    (
+      idea.ideaOwnerName === `${user.firstName} ${user.lastName}` ||
+      user.roles.includes('ROLE_MANAGER') ||
+      user.roles.includes('ROLE_ADMIN')
+    )
   );
 
   if (loading) {

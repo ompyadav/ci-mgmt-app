@@ -31,15 +31,18 @@ public class UserController {
     private final UserService userService;
 
     /**
-     * Get all users with pagination
+     * Get all users with pagination and filters
      * GET /api/users
      */
     @GetMapping
     @PreAuthorize("hasAnyAuthority('USER_READ', 'ROLE_ADMIN')")
     public ResponseEntity<Page<UserResponse>> getAllUsers(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String department,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        log.info("GET /api/users - Fetching all users");
-        Page<UserResponse> users = userService.getAllUsers(pageable);
+        log.info("GET /api/users - Fetching users with filters: search={}, status={}, department={}", search, status, department);
+        Page<UserResponse> users = userService.getAllUsersWithFilters(search, status, department, pageable);
         return ResponseEntity.ok(users);
     }
 

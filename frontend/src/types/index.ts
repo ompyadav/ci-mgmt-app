@@ -31,7 +31,7 @@ export interface UserRequest {
   businessUnit?: string;
   location?: string;
   phoneNumber?: string;
-  roles: string[];
+  roleNames: string[];
 }
 
 // Authentication Types
@@ -143,8 +143,8 @@ export interface Notification {
   id: number;
   title: string;
   message: string;
-  type: NotificationType;
-  read: boolean;
+  notificationType: string;
+  isRead: boolean;
   readAt?: string;
   createdAt: string;
 }
@@ -331,5 +331,69 @@ export type Permission =
   | 'CONFIG_MANAGE'
   | 'ROLE_MANAGE'
   | 'AUDIT_VIEW';
+
+// Audit Log Types
+export interface AuditLog {
+  id: number;
+  username: string;
+  action: string;
+  entityType?: string;
+  entityId?: number;
+  entityName?: string;
+  oldValue?: string;
+  newValue?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  timestamp: string;
+  status?: string;
+  errorMessage?: string;
+  requestMethod?: string;
+  requestUrl?: string;
+  sessionId?: string;
+  module?: string;
+}
+
+export interface AuditLogFilters {
+  userId?: number;
+  action?: string;
+  module?: string;
+  entityType?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  size?: number;
+  sortBy?: string;
+  sortDirection?: 'ASC' | 'DESC';
+}
+
+export interface ActivityStatistics {
+  totalActivities: number;
+  actionCounts: {
+    LOGIN: number;
+    CREATE: number;
+    UPDATE: number;
+    DELETE: number;
+    APPROVE: number;
+    REJECT: number;
+    EXPORT: number;
+  };
+  moduleCounts: {
+    USER: number;
+    IDEA: number;
+    ROLE: number;
+    NOTIFICATION: number;
+  };
+  uniqueUsers: number;
+  successCount: number;
+  failureCount: number;
+  successRate: number;
+  topUsers: Array<{
+    username: string;
+    activityCount: number;
+  }>;
+  dailyActivity: Record<string, number>;
+  startDate: string;
+  endDate: string;
+}
 
 // Made with Bob

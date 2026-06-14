@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
-import { Bell, User, LogOut, Settings, Menu, X } from 'lucide-react';
+import { notificationService } from '../../api/services/notificationService';
+import { Notification } from '../../types';
+import { Bell, User, LogOut, Settings, Menu, X, CheckCircle, MessageSquare, Clock, Mail } from 'lucide-react';
 import { Badge } from '../common/Badge';
 
 interface HeaderProps {
@@ -14,14 +16,80 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, isSidebarOpen }) =>
   const { user, logout } = useAuthStore();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [recentNotifications, setRecentNotifications] = useState<Notification[]>([]);
+
+  useEffect(() => {
+    fetchNotificationData();
+    // Poll for new notifications every 5 seconds for real-time updates
+    const interval = setInterval(fetchNotificationData, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Also refresh when window gains focus
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchNotificationData();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
+
+  const fetchNotificationData = async () => {
+    try {
+      const count = await notificationService.getUnreadCount();
+      setNotificationCount(count);
+      
+      if (count > 0) {
+        const response = await notificationService.getUnreadNotifications(0, 5);
+        setRecentNotifications(response.content);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  // Mock notification count - will be replaced with real data
-  const notificationCount = 3;
+  const handleMarkAsRead = async (id: number) => {
+    try {
+      await notificationService.markAsRead(id);
+      await fetchNotificationData();
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'IDEA_APPROVED':
+        return <CheckCircle className="w-4 h-4 text-green-600" />;
+      case 'IDEA_SUBMITTED':
+        return <Bell className="w-4 h-4 text-blue-600" />;
+      case 'IDEA_STATUS_CHANGED':
+        return <Clock className="w-4 h-4 text-purple-600" />;
+      case 'COMMENT_ADDED':
+        return <MessageSquare className="w-4 h-4 text-blue-600" />;
+      case 'SYSTEM':
+        return <Mail className="w-4 h-4 text-orange-600" />;
+      default:
+        return <Bell className="w-4 h-4 text-gray-600" />;
+    }
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (seconds < 60) return 'Just now';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    return `${Math.floor(seconds / 86400)}d ago`;
+  };
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
@@ -75,36 +143,50 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, isSidebarOpen }) =>
                   className="fixed inset-0 z-40"
                   onClick={() => setShowNotifications(false)}
                 />
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-                  <div className="p-4 border-b border-gray-200">
+                <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                  <div className="p-4 border-b border-gray-200 flex items-center justify-between">
                     <h3 className="font-semibold text-gray-900">Notifications</h3>
+                    {notificationCount > 0 && (
+                      <Badge variant="info">{notificationCount} new</Badge>
+                    )}
                   </div>
                   <div className="max-h-96 overflow-y-auto">
-                    {/* Mock notifications - will be replaced with real data */}
-                    <div className="p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100">
-                      <div className="flex items-start gap-3">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full mt-2" />
-                        <div className="flex-1">
-                          <p className="text-sm text-gray-900">New idea submitted</p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            John Doe submitted "Automation for Report Generation"
-                          </p>
-                          <p className="text-xs text-gray-400 mt-1">2 hours ago</p>
-                        </div>
+                    {recentNotifications.length === 0 ? (
+                      <div className="p-8 text-center">
+                        <Bell className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                        <p className="text-sm text-gray-500">No new notifications</p>
                       </div>
-                    </div>
-                    <div className="p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100">
-                      <div className="flex items-start gap-3">
-                        <div className="w-2 h-2 bg-green-500 rounded-full mt-2" />
-                        <div className="flex-1">
-                          <p className="text-sm text-gray-900">Idea approved</p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Your idea "Process Improvement" has been approved
-                          </p>
-                          <p className="text-xs text-gray-400 mt-1">5 hours ago</p>
+                    ) : (
+                      recentNotifications.map((notification) => (
+                        <div
+                          key={notification.id}
+                          className="p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100"
+                          onClick={() => {
+                            handleMarkAsRead(notification.id);
+                            navigate('/notifications');
+                            setShowNotifications(false);
+                          }}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="mt-1">
+                              {getNotificationIcon(notification.notificationType)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {notification.title}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                                {notification.message}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-1">
+                                {formatTimeAgo(notification.createdAt)}
+                              </p>
+                            </div>
+                            <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
+                          </div>
                         </div>
-                      </div>
-                    </div>
+                      ))
+                    )}
                   </div>
                   <div className="p-3 border-t border-gray-200">
                     <button
