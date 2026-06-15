@@ -126,6 +126,42 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
     }
 
+    @ExceptionHandler(TwoFactorRequiredException.class)
+    public ResponseEntity<ErrorResponse> handleTwoFactorRequiredException(
+            TwoFactorRequiredException ex, WebRequest request) {
+        log.info("2FA required: {}", ex.getMessage());
+        
+        Map<String, String> additionalData = new HashMap<>();
+        additionalData.put("requires2FA", "true");
+        
+        ErrorResponse error = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.FORBIDDEN.value())
+                .error("Two-Factor Authentication Required")
+                .message(ex.getMessage())
+                .path(request.getDescription(false).replace("uri=", ""))
+                .validationErrors(additionalData)
+                .build();
+        
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ErrorResponse> handleRuntimeException(
+            RuntimeException ex, WebRequest request) {
+        log.error("Runtime exception: {}", ex.getMessage(), ex);
+        
+        ErrorResponse error = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Bad Request")
+                .message(ex.getMessage() != null ? ex.getMessage() : "An error occurred")
+                .path(request.getDescription(false).replace("uri=", ""))
+                .build();
+        
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(
             Exception ex, WebRequest request) {
@@ -135,7 +171,7 @@ public class GlobalExceptionHandler {
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .error("Internal Server Error")
-                .message("An unexpected error occurred")
+                .message("An unexpected error occurred: " + ex.getMessage())
                 .path(request.getDescription(false).replace("uri=", ""))
                 .build();
         

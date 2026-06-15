@@ -113,6 +113,33 @@ public class User extends BaseEntity {
     @Column(name = "mfa_secret")
     private String mfaSecret;
 
+    @Column(name = "totp_enabled")
+    @Builder.Default
+    private Boolean totpEnabled = false;
+
+    @Column(name = "totp_secret")
+    private String totpSecret;
+
+    @Column(name = "backup_codes", columnDefinition = "TEXT")
+    private String backupCodes;
+
+    @Column(name = "passkey_enabled")
+    @Builder.Default
+    private Boolean passkeyEnabled = false;
+
+    @Column(name = "passkey_credentials", columnDefinition = "TEXT")
+    private String passkeyCredentials;
+
+    @Column(name = "captcha_required")
+    @Builder.Default
+    private Boolean captchaRequired = false;
+
+    @Column(name = "last_2fa_setup")
+    private LocalDateTime last2faSetup;
+
+    @Column(name = "last_passkey_setup")
+    private LocalDateTime lastPasskeySetup;
+
     @Column(name = "email_verified")
     @Builder.Default
     private Boolean emailVerified = false;

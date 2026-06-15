@@ -1,5 +1,4 @@
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
-import { ApiError } from '@/types';
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
@@ -29,7 +28,7 @@ apiClient.interceptors.response.use(
   (response) => {
     return response;
   },
-  async (error: AxiosError<ApiError>) => {
+  async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
     // Handle 401 Unauthorized
@@ -69,17 +68,9 @@ apiClient.interceptors.response.use(
       }
     }
 
-    // Handle other errors
-    const apiError: ApiError = {
-      timestamp: new Date().toISOString(),
-      status: error.response?.status || 500,
-      error: error.response?.statusText || 'Internal Server Error',
-      message: error.response?.data?.message || error.message || 'An error occurred',
-      path: error.config?.url || '',
-      validationErrors: error.response?.data?.validationErrors,
-    };
-
-    return Promise.reject(apiError);
+    // Handle other errors - preserve the original error structure
+    // so that components can check error.response.status
+    return Promise.reject(error);
   }
 );
 

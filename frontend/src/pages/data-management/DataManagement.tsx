@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
@@ -53,9 +53,52 @@ const DataManagement: React.FC = () => {
     { id: 5, name: 'IBM Internal', description: 'IBM Internal Review' },
   ]);
 
+  const [departments, setDepartments] = useState<MasterItem[]>(() => {
+    const saved = localStorage.getItem('masterDepartments');
+    return saved ? JSON.parse(saved) : [
+      { id: 1, name: 'Engineering', description: 'Engineering department' },
+      { id: 2, name: 'Product', description: 'Product management' },
+      { id: 3, name: 'Design', description: 'Design team' },
+      { id: 4, name: 'Marketing', description: 'Marketing department' },
+      { id: 5, name: 'Sales', description: 'Sales team' },
+      { id: 6, name: 'Operations', description: 'Operations department' },
+      { id: 7, name: 'Finance', description: 'Finance department' },
+      { id: 8, name: 'Human Resources', description: 'HR department' },
+      { id: 9, name: 'Customer Support', description: 'Customer support team' },
+      { id: 10, name: 'IT', description: 'IT department' },
+      { id: 11, name: 'Quality Assurance', description: 'QA team' },
+      { id: 12, name: 'Research & Development', description: 'R&D department' },
+    ];
+  });
+
+  const [locations, setLocations] = useState<MasterItem[]>(() => {
+    const saved = localStorage.getItem('masterLocations');
+    return saved ? JSON.parse(saved) : [
+      { id: 1, name: 'New York', description: 'New York office' },
+      { id: 2, name: 'San Francisco', description: 'San Francisco office' },
+      { id: 3, name: 'London', description: 'London office' },
+      { id: 4, name: 'Tokyo', description: 'Tokyo office' },
+      { id: 5, name: 'Singapore', description: 'Singapore office' },
+      { id: 6, name: 'Mumbai', description: 'Mumbai office' },
+      { id: 7, name: 'Toronto', description: 'Toronto office' },
+      { id: 8, name: 'Sydney', description: 'Sydney office' },
+      { id: 9, name: 'Berlin', description: 'Berlin office' },
+      { id: 10, name: 'Remote', description: 'Remote work' },
+    ];
+  });
+
   const [editingItem, setEditingItem] = useState<{ type: string; item: MasterItem | null }>({ type: '', item: null });
   const [newItemName, setNewItemName] = useState('');
   const [newItemDescription, setNewItemDescription] = useState('');
+
+  // Save to localStorage whenever departments or locations change
+  useEffect(() => {
+    localStorage.setItem('masterDepartments', JSON.stringify(departments));
+  }, [departments]);
+
+  useEffect(() => {
+    localStorage.setItem('masterLocations', JSON.stringify(locations));
+  }, [locations]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -165,6 +208,10 @@ const DataManagement: React.FC = () => {
       setStatuses([...statuses, newItem]);
     } else if (type === 'substatus') {
       setSubStatuses([...subStatuses, newItem]);
+    } else if (type === 'department') {
+      setDepartments([...departments, newItem]);
+    } else if (type === 'location') {
+      setLocations([...locations, newItem]);
     }
 
     setNewItemName('');
@@ -191,6 +238,10 @@ const DataManagement: React.FC = () => {
       setStatuses(updateList(statuses));
     } else if (type === 'substatus') {
       setSubStatuses(updateList(subStatuses));
+    } else if (type === 'department') {
+      setDepartments(updateList(departments));
+    } else if (type === 'location') {
+      setLocations(updateList(locations));
     }
 
     setNewItemName('');
@@ -209,6 +260,10 @@ const DataManagement: React.FC = () => {
       setStatuses(statuses.filter(item => item.id !== id));
     } else if (type === 'substatus') {
       setSubStatuses(subStatuses.filter(item => item.id !== id));
+    } else if (type === 'department') {
+      setDepartments(departments.filter(item => item.id !== id));
+    } else if (type === 'location') {
+      setLocations(locations.filter(item => item.id !== id));
     }
   };
 
@@ -319,6 +374,8 @@ const DataManagement: React.FC = () => {
     { id: 'category-master', name: 'Category Master', icon: FolderTree },
     { id: 'status-master', name: 'Status Master', icon: List },
     { id: 'substatus-master', name: 'Sub-Status Master', icon: List },
+    { id: 'department-master', name: 'Department Master', icon: Users },
+    { id: 'location-master', name: 'Location Master', icon: FolderTree },
   ];
 
   return (
@@ -477,6 +534,12 @@ const DataManagement: React.FC = () => {
 
       {/* Sub-Status Master Tab */}
       {activeTab === 'substatus-master' && renderMasterList('substatus', subStatuses, 'Sub-Status Master')}
+
+      {/* Department Master Tab */}
+      {activeTab === 'department-master' && renderMasterList('department', departments, 'Department Master')}
+
+      {/* Location Master Tab */}
+      {activeTab === 'location-master' && renderMasterList('location', locations, 'Location Master')}
     </div>
   );
 };

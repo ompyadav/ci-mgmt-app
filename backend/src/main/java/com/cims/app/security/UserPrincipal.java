@@ -26,6 +26,7 @@ public class UserPrincipal implements UserDetails {
     private Collection<? extends GrantedAuthority> authorities;
     private boolean enabled;
     private boolean accountNonLocked;
+    private User user; // Added to support authentication features
 
     /**
      * Create UserPrincipal from User entity
@@ -53,7 +54,8 @@ public class UserPrincipal implements UserDetails {
                 user.getLastName(),
                 authorities,
                 user.getStatus() == User.UserStatus.ACTIVE,
-                user.isAccountNonLocked()
+                user.isAccountNonLocked(),
+                user // Added user entity
         );
     }
 

@@ -27,33 +27,41 @@ const UserEdit: React.FC = () => {
     roleNames: [],
   });
 
-  const departments = [
-    'Engineering',
-    'Product',
-    'Design',
-    'Marketing',
-    'Sales',
-    'Operations',
-    'Finance',
-    'Human Resources',
-    'Customer Support',
-    'IT',
-    'Quality Assurance',
-    'Research & Development',
-  ];
+  const [departments, setDepartments] = useState<string[]>([]);
+  const [locations, setLocations] = useState<string[]>([]);
 
-  const locations = [
-    'New York',
-    'San Francisco',
-    'London',
-    'Tokyo',
-    'Singapore',
-    'Mumbai',
-    'Toronto',
-    'Sydney',
-    'Berlin',
-    'Remote',
-  ];
+  // Load departments and locations from localStorage
+  useEffect(() => {
+    const loadMasterData = () => {
+      const savedDepartments = localStorage.getItem('masterDepartments');
+      const savedLocations = localStorage.getItem('masterLocations');
+      
+      if (savedDepartments) {
+        const deptData = JSON.parse(savedDepartments);
+        setDepartments(deptData.map((item: any) => item.name));
+      } else {
+        // Fallback to default values
+        setDepartments([
+          'Engineering', 'Product', 'Design', 'Marketing', 'Sales',
+          'Operations', 'Finance', 'Human Resources', 'Customer Support',
+          'IT', 'Quality Assurance', 'Research & Development'
+        ]);
+      }
+      
+      if (savedLocations) {
+        const locData = JSON.parse(savedLocations);
+        setLocations(locData.map((item: any) => item.name));
+      } else {
+        // Fallback to default values
+        setLocations([
+          'New York', 'San Francisco', 'London', 'Tokyo', 'Singapore',
+          'Mumbai', 'Toronto', 'Sydney', 'Berlin', 'Remote'
+        ]);
+      }
+    };
+    
+    loadMasterData();
+  }, []);
 
   const availableRoles = [
     { value: 'ROLE_USER', label: 'User' },
